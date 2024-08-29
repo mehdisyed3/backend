@@ -12,6 +12,6 @@ app.use(cors({
 app.use(express.json({limit: '16kb'})); // to receive json data from the client with a limit of 16kb
 app.use(express.urlencoded({extended: true, limit: '16kb'})); //to receive and parse urlencoded data from the client with a limit of 16kb 
 app.use(express.static('public'));// to serve static files from the public folder
-app.use(cookieParser()); // to parse cookies from the client and perdorm crud operations on them
+app.use(cookieParser()); // to parse cookies from the client and perform crud operations on them
 
 export {app};
