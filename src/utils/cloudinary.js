@@ -22,8 +22,10 @@ import fs from 'fs';
         const response = await cloudinary.uploader.upload(filePath,{
           resource_type: 'auto', //Automatically determine the type of file to upload
         })
+        console.log('>>> response', response);
         // file uploaded successfully
         console.log('File uploaded on cloudinary successfully',response.url);
+        fs.unlinkSync(filePath); // remove the locallly saved temp file as the upload operation was successful
         return response
       }
       catch(error){

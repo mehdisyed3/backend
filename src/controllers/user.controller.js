@@ -7,7 +7,7 @@ import { ApiResponse } from "../utils/ApiResponse.js";
 const registerUser = asyncHandler(async (req, res) => {
   // res.status(200).json({ message: "user registered!!!!" });
   const { fullName, email, password, username } = req.body;
-
+ console.log('@@@@@@@@',req)
   if([fullName, email, password, username].some((field) => field?.trim() === '')){
     throw new ApiError(400, 'All fields are required');
   }
@@ -56,7 +56,7 @@ const registerUser = asyncHandler(async (req, res) => {
   }
 
   return res.status(201).json(
-    new ApiResponse(201, 'User created successfully', createdUser)
+    new ApiResponse(201, createdUser, 'User created successfully')
   );
 });
 
