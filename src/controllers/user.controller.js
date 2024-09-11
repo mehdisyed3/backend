@@ -4,18 +4,21 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
-const generateAccessAndRefreshToken = async (userId) => {
+const generateAccessAndRefreshTokens = async (userId) =>{
   try {
-    const user = await User.findById(userId)
-    const accessToken = user.generateAccessToken()
-    const refreshToken = user.generateRefreshToken()
-    user.refreshToken = refreshToken;
-    user.save({ validateBeforeSave: false });
+      const user = await User.findById(userId)
 
-    return { accessToken, refreshToken }
+      const accessToken = await user.generateAccessToken()
+      const refreshToken = await user.generateRefreshToken()
+
+      user.refreshToken = refreshToken
+      await user.save({ validateBeforeSave: false })
+
+      return {accessToken, refreshToken}
+
 
   } catch (error) {
-    throw new ApiError(500, 'Error generating tokens');
+      throw new ApiError(500, "Something went wrong while generating referesh and access token")
   }
 }
 
@@ -62,7 +65,7 @@ const registerUser = asyncHandler(async (req, res) => {
     avatar: avatar.url,
     coverImage: coverImage?.url || '',
   })
-  console.log('>>>> user', user);
+
 
   const createdUser = await User.findById(user._id).select('-password -refreshToken');
 
@@ -76,35 +79,34 @@ const registerUser = asyncHandler(async (req, res) => {
 });
 
 const logginUser = asyncHandler(async (req, res) => {
-  const { email, username, password } = req.body;
+  const { email, username, password } = req.body
+
   if (!username && !email) {
     throw new ApiError(400, 'Username or email is required');
   }
 
-  console.log('>>>> req.body', req.body);
+
 
   const user = await User.findOne({
     $or: [{ email }, { username }]
   })
 
-  console.log('>>>> user', user);
+
 
   if (!user) {
     throw new ApiError(404, 'User not found');
   }
 
   const isPasswordValid = await user.isPasswordCorrect(password);
-  console.log('>>>> isPasswordValid', isPasswordValid);
+
   if (!isPasswordValid) {
     throw new ApiError(401, 'Invalid credentials');
   }
 
-  const { accessToken, refreshToken } = await generateAccessAndRefreshToken(user._id);
+  const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
 
   const loggedInUser = await User.findById(user._id).select('-password -refreshToken');
-  console.log('@@@@ loggedinUSEr', loggedInUser);
-  console.log('!!!! accessTOKER',accessToken)
-  console.log('!!!! refreshToken',refreshToken)
+
 
   const options ={
     httpOnly:true,

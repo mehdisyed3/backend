@@ -69,7 +69,7 @@ userSchema.pre('save', async function(next){
     username:this.username,
     fullName:this.fullName,
   },
-  process.evv.ACCESS_TOKEN_SECRET,
+  process.env.ACCESS_TOKEN_SECRET,
 {
   expiresIn: process.env.ACCESS_TOKEN_EXPIRY
 })
@@ -79,7 +79,7 @@ userSchema.pre('save', async function(next){
     return  jwt.sign({
       _id:this._id,
     },
-    process.evv.REFRESH_TOKEN_SECRET,
+    process.env.REFRESH_TOKEN_SECRET,
   {
     expiresIn: process.env.REFRESH_TOKEN_EXPIRY
   })
