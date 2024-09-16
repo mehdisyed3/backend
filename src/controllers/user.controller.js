@@ -192,4 +192,83 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
 });
 
-export { registerUser, logginUser, logoutUser, refreshAccessToken };
+const getCurrentUser = asyncHandler(async (req, res) => {
+
+  return res.status(200).json(new ApiResponse(200, req.user, 'User fetched successfully'));
+  
+});
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+
+  const { fullName, email  } = req.body;
+
+  if(!fullName || !email){
+    throw new ApiError(400, 'All Fields are required');
+  }
+
+  const user = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set:{
+        fullName,
+        email
+      },
+      new: true
+    }
+  ).select('-password -refreshToken');
+
+  return res.status(200).json(new ApiResponse(200,user, 'Account has been updated successfully'));
+
+
+})
+
+const updateUserAvatar = asyncHandler(async (req, res) => {
+  const avatarLocalPath = req.file.path
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, 'Avatar file is missin');
+  }
+
+  const avatar = await uploadOnCloudinary(avatarLocalPath)
+
+  if (!avatar.url) {
+    throw new ApiError(500, 'Error uploading avatar on cloudinary');
+  }
+
+  const user = await User.findByIdAndUpdate( req.user._id, {
+    $set:{avatar: avatar.url},
+  },
+    {new: true}
+  ).select('-password -refreshToken');
+
+  return res.status(200).json(new ApiResponse(200,user, 'Avatar updated successfully'));
+});
+
+const updateUserCoverImage = asyncHandler(async (req,res)=>{
+
+  const coverImageLocalPath = req.file.path
+
+  if(!coverImageLocalPath){
+    throw new ApiError(400, 'Cover Image file is missing');
+  }
+
+  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+
+  if(coverImage.url){
+    throw new ApiError(500, 'Error uploading cover image on cloudinary');
+  }
+
+  const user = User.findByIdAndUpdate(rew.user._id ,{
+    $set: {
+      coverImage: coverImage.url
+    }
+  },{
+    new:true
+  }). select('-password -refreshToken');
+
+  return res.status(200).json( new ApiResponse(200, user , 'Cover Image updated successfully'));
+
+
+})
+
+export { registerUser, logginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage };
