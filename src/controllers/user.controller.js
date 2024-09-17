@@ -195,21 +195,21 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 const getCurrentUser = asyncHandler(async (req, res) => {
 
   return res.status(200).json(new ApiResponse(200, req.user, 'User fetched successfully'));
-  
+
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
 
-  const { fullName, email  } = req.body;
+  const { fullName, email } = req.body;
 
-  if(!fullName || !email){
+  if (!fullName || !email) {
     throw new ApiError(400, 'All Fields are required');
   }
 
   const user = await User.findByIdAndUpdate(
     req.user._id,
     {
-      $set:{
+      $set: {
         fullName,
         email
       },
@@ -217,7 +217,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     }
   ).select('-password -refreshToken');
 
-  return res.status(200).json(new ApiResponse(200,user, 'Account has been updated successfully'));
+  return res.status(200).json(new ApiResponse(200, user, 'Account has been updated successfully'));
 
 
 })
@@ -235,40 +235,105 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     throw new ApiError(500, 'Error uploading avatar on cloudinary');
   }
 
-  const user = await User.findByIdAndUpdate( req.user._id, {
-    $set:{avatar: avatar.url},
+  const user = await User.findByIdAndUpdate(req.user._id, {
+    $set: { avatar: avatar.url },
   },
-    {new: true}
+    { new: true }
   ).select('-password -refreshToken');
 
-  return res.status(200).json(new ApiResponse(200,user, 'Avatar updated successfully'));
+  return res.status(200).json(new ApiResponse(200, user, 'Avatar updated successfully'));
 });
 
-const updateUserCoverImage = asyncHandler(async (req,res)=>{
+const updateUserCoverImage = asyncHandler(async (req, res) => {
 
   const coverImageLocalPath = req.file.path
 
-  if(!coverImageLocalPath){
+  if (!coverImageLocalPath) {
     throw new ApiError(400, 'Cover Image file is missing');
   }
 
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
 
-  if(coverImage.url){
+  if (coverImage.url) {
     throw new ApiError(500, 'Error uploading cover image on cloudinary');
   }
 
-  const user = User.findByIdAndUpdate(rew.user._id ,{
+  const user = User.findByIdAndUpdate(rew.user._id, {
     $set: {
       coverImage: coverImage.url
     }
-  },{
-    new:true
-  }). select('-password -refreshToken');
+  }, {
+    new: true
+  }).select('-password -refreshToken');
 
-  return res.status(200).json( new ApiResponse(200, user , 'Cover Image updated successfully'));
+  return res.status(200).json(new ApiResponse(200, user, 'Cover Image updated successfully'));
 
 
 })
 
-export { registerUser, logginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage };
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+  const { username } = req.params;
+
+  if (!username?.trim()) {
+    throw new ApiError(400, 'Username is required');
+  }
+
+  const channel = await User.aggregate([
+    {
+      $match: {
+        username: username.toLowerCase()
+      }
+    },
+    {
+      $lookup: {
+        from: 'subscriptions',
+        localField: '_id',
+        foreignField: 'channel',
+        as: 'subscribers'
+      }
+    },
+    {
+      $lookup: {
+        from: 'subscriptons',
+        localField: '_id',
+        foreignField: 'subscriber',
+        as: 'subscribedTo'
+      }
+    },
+    {
+      $addFields: {
+        subscribersCount: { $size: '$subscribers' },
+        subscribedToCount: { $size: '$subscribedTo' },
+        isSubscribed: {
+          $cond: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false
+          }
+        }
+      }
+    },
+    {
+      $project: {
+        subscribersCount: 1,
+        subscribedToCount: 1,
+        isSubscribed: 1,
+        fullName: 1,
+        username: 1,
+        avatar: 1,
+        coverImage: 1,
+        email: 1,
+      }
+    }
+  ])
+
+  if (!channel?.length) {
+    throw new ApiError(404, 'Channel not found')
+  }
+
+  return res.status(200)
+    .json(new ApiResponse(200, channel[0], 'Channel fetched successfully'));
+
+});
+
+export { registerUser, logginUser, logoutUser, refreshAccessToken, changeCurrentPassword, getCurrentUser, updateAccountDetails, updateUserAvatar, updateUserCoverImage, getUserChannelProfile };
