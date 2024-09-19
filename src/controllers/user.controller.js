@@ -108,6 +108,7 @@ const logginUser = asyncHandler(async (req, res) => {
   // options are sent to the browser to tell the browser to store the cookie in a secure way
   // httpOnly: true means that the cookie cannot be accessed  on the client side
   // secure: true means that the cookie can only be sent over https
+  // the cookie is sent to the browser with the response
   const options = {
     httpOnly: true,
     secure: true
