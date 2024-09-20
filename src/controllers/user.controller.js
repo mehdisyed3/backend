@@ -256,20 +256,26 @@ const updateUserCoverImage = asyncHandler(async (req, res) => {
   }
 
   const coverImage = await uploadOnCloudinary(coverImageLocalPath);
-
-  if (coverImage.url) {
-    throw new ApiError(500, 'Error uploading cover image on cloudinary');
+  console.log('<><><><><> coverImage', coverImage)
+  if (!coverImage.url) {
+    throw new ApiError(500, 'Error uploading cover image on cloudinary no url');
   }
 
-  const user = User.findByIdAndUpdate(rew.user._id, {
+  const user = await User.findByIdAndUpdate(req.user?._id, {
     $set: {
       coverImage: coverImage.url
     }
   }, {
     new: true
-  }).select('-password -refreshToken');
+  }).select('-password');
+  console.log('##### USER', user)
 
-  return res.status(200).json(new ApiResponse(200, user, 'Cover Image updated successfully'));
+  // return res.status(200).json(new ApiResponse(200, user, 'Cover Image updated successfully'));
+  return res
+    .status(200)
+    .json(
+        new ApiResponse(200, user, "Cover image updated successfully")
+    )
 
 
 })
