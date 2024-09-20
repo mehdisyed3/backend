@@ -113,7 +113,8 @@ const logginUser = asyncHandler(async (req, res) => {
     httpOnly: true,
     secure: true
   }
-  return res.status(200).cookie('accessToken', accessToken, options)
+  return res.status(200)
+    .cookie('accessToken', accessToken, options)
     .cookie('refreshToken', refreshToken, options)
     // .json( new ApiResponse(200, loggedInUser, 'User logged in successfully'));
     .json(new ApiResponse(200, { user: loggedInUser, accessToken, refreshToken }, 'User logged in successfully'));
@@ -125,7 +126,7 @@ const logoutUser = asyncHandler(async (req, res) => {
   res.clearCookie('refreshToken');
   // res.status(200).json(new ApiResponse(200, {}, 'User logged out successfully'));
   const user = await User.findByIdAndUpdate(req.user._id, {
-    $set: { refreshToken: undefined }
+    $unset: { refreshToken: 1 }
   }, {
     new: true
   });
@@ -339,31 +340,34 @@ const getUserChannelProfile = asyncHandler(async (req, res) => {
 });
 
 const getWatchHistory = asyncHandler(async (req, res) => {
+  console.log('>>>>> req.user', req.user._id)
   const user = await User.aggregate([
     {
-      $match : {
-        _id : new mongoose.Types.ObjectId(req.user._id)
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user._id)
+        // _id: req.user._id
+
       }
     },
     {
-      $lookup :{
+      $lookup: {
         from: 'videos',
         localField: 'watchHistory',
         foreignField: '_id',
         as: 'watchHistory',
-        pipeline:[
+        pipeline: [
           {
-            $lookup:{
+            $lookup: {
               from: 'users',
               localField: 'owner',
               foreignField: '_id',
               as: 'owner',
-              pipeline:[
+              pipeline: [
                 {
-                  $project:{
-                    fullName:1,
-                    username:1,
-                    avatar:1,
+                  $project: {
+                    fullName: 1,
+                    username: 1,
+                    avatar: 1,
 
                   }
                 }
@@ -371,9 +375,11 @@ const getWatchHistory = asyncHandler(async (req, res) => {
             }
           },
           {
-            $addFields:{
+            $addFields: {
               // owner: { $arrayElemAt: ['$owner', 0]}  // this is the same as the line below
-              $first: '$owner' 
+              owner:{
+                $first: "$owner"
+            }
             }
           }
         ]
@@ -383,18 +389,19 @@ const getWatchHistory = asyncHandler(async (req, res) => {
 
   return res.status(200).json(new ApiResponse(200, user[0].watchHistory, 'Watch history fetched successfully'));
 
-}) 
+})
 
-export { registerUser,
-   logginUser,
-   logoutUser,
-   refreshAccessToken,
-   changeCurrentPassword,
-   getCurrentUser,
-   updateAccountDetails
+export {
+  registerUser,
+  logginUser,
+  logoutUser,
+  refreshAccessToken,
+  changeCurrentPassword,
+  getCurrentUser,
+  updateAccountDetails
   , updateUserAvatar,
-   updateUserCoverImage,
-   getUserChannelProfile,
-   getWatchHistory
+  updateUserCoverImage,
+  getUserChannelProfile,
+  getWatchHistory
 
- };
+};
