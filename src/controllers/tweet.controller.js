@@ -40,13 +40,63 @@ const getUserTweets = asyncHandler(async (req, res) => {
     owner:userId
   })
 
+
   res.status(200).json(new ApiResponse(200, tweets, 'User tweets fetched successfully'));
-  // TODO USE AGGREGATION TO GET COUNT 
+
 
 
 })
 
+const deleteTweet = asyncHandler(async (req, res) => {
+  const tweetId = req.params.tweetId;
+
+  if(!tweetId){
+    throw new ApiError(400, 'Tweet Id is required');
+  }
+
+
+  const tweet = await Tweet.findByIdAndDelete(tweetId);
+
+  if(!tweet){
+    throw new ApiError(404, 'Tweet not found');
+  }
+
+  console.log('>>>> Tweet deleted successfully',tweet);
+
+  res.status(200).json(new ApiResponse(200, null, 'Tweet deleted successfully'));
+});
+
+const updateTweet = asyncHandler(async (req, res) => { 
+  const tweetId = req.params.tweetId;
+  const { content } = req.body;
+
+  console.log('>>>> tweetId', req.body);
+
+  if(!tweetId){
+    throw new ApiError(400, 'Tweet Id is required');
+  }
+
+  if(!content){
+    throw new ApiError(400, 'Content is required');
+  }
+
+  const tweet = await Tweet.findByIdAndUpdate(
+    {_id: tweetId},
+    {content : content},
+    {new: true}
+  )
+
+  if(!tweet){
+    throw new ApiError(404, 'Tweet not found');
+  }
+
+  return res.status(200).json(new ApiResponse(200, tweet, 'Tweet updated successfully'));
+  
+ });
+
 export { 
   createTweet,
-  getUserTweets
+  getUserTweets,
+  deleteTweet,
+  updateTweet,
  };
