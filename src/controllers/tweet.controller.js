@@ -4,7 +4,6 @@ import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 
 
-
 const createTweet = asyncHandler(async (req, res) => {
   const { content } = req.body;
   const userId = req.user._id;
@@ -13,11 +12,11 @@ const createTweet = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Content cannot be empty");
   }
 
-  if(!userId){
+  if (!userId) {
     throw new ApiError(401, 'Unauthorized Request');
   }
 
-  const newTweet =await Tweet.create({
+  const newTweet = await Tweet.create({
     content,
     owner: userId,
   });
@@ -32,71 +31,64 @@ const getUserTweets = asyncHandler(async (req, res) => {
 
   const userId = req.params.userId;
 
-  if(!userId){
+  if (!userId) {
     throw new ApiError(400, 'User Id is required');
   }
 
   const tweets = await Tweet.find({
-    owner:userId
+    owner: userId
   })
 
-
   res.status(200).json(new ApiResponse(200, tweets, 'User tweets fetched successfully'));
-
-
 
 })
 
 const deleteTweet = asyncHandler(async (req, res) => {
   const tweetId = req.params.tweetId;
 
-  if(!tweetId){
+  if (!tweetId) {
     throw new ApiError(400, 'Tweet Id is required');
   }
 
-
   const tweet = await Tweet.findByIdAndDelete(tweetId);
 
-  if(!tweet){
+  if (!tweet) {
     throw new ApiError(404, 'Tweet not found');
   }
 
-  console.log('>>>> Tweet deleted successfully',tweet);
 
   res.status(200).json(new ApiResponse(200, null, 'Tweet deleted successfully'));
 });
 
-const updateTweet = asyncHandler(async (req, res) => { 
+const updateTweet = asyncHandler(async (req, res) => {
   const tweetId = req.params.tweetId;
   const { content } = req.body;
 
-  console.log('>>>> tweetId', req.body);
-
-  if(!tweetId){
+  if (!tweetId) {
     throw new ApiError(400, 'Tweet Id is required');
   }
 
-  if(!content){
+  if (!content) {
     throw new ApiError(400, 'Content is required');
   }
 
   const tweet = await Tweet.findByIdAndUpdate(
-    {_id: tweetId},
-    {content : content},
-    {new: true}
+    { _id: tweetId },
+    { content: content },
+    { new: true }
   )
 
-  if(!tweet){
+  if (!tweet) {
     throw new ApiError(404, 'Tweet not found');
   }
 
   return res.status(200).json(new ApiResponse(200, tweet, 'Tweet updated successfully'));
-  
- });
 
-export { 
+});
+
+export {
   createTweet,
   getUserTweets,
   deleteTweet,
   updateTweet,
- };
+};
